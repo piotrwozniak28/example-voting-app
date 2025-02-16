@@ -4,6 +4,7 @@
 
 services:
   vote:
+    profiles: ["main", "without-worker"]
     build: 
       context: ./vote
       target: dev
@@ -25,6 +26,7 @@ services:
       - back-tier
 
   result:
+    profiles: ["main", "without-worker"]
     build: ./result
     # use nodemon rather than node for local dev
     entrypoint: nodemon --inspect=0.0.0.0 server.js
@@ -41,6 +43,7 @@ services:
       - back-tier
 
   worker:
+    profiles: ["main"]
     build:
       context: ./worker
     depends_on:
@@ -52,32 +55,61 @@ services:
       - back-tier
 
   redis:
+    profiles: ["main", "without-worker"]
     image: redis:alpine
+    command: ["redis-server", "--bind", "0.0.0.0", "--port", "6379"]
     volumes:
       - "./healthchecks:/healthchecks"
     healthcheck:
       test: /healthchecks/redis.sh
       interval: "5s"
+    ports:
+      - "6379:6379"
+    networks:
+      - back-tier
+
+  redisinsight:
+    profiles: ["main", "without-worker"]
+    image: redis/redisinsight:latest
+    ports:
+      - "5540:5540"
     networks:
       - back-tier
 
   db:
+    profiles: ["main", "without-worker"]
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
+    - POSTGRES_DB=${POSTGRES_DB}
+    - POSTGRES_USER=${POSTGRES_USER}
+    - POSTGRES_PASSWORD=${POSTGRES_PW}
     volumes:
       - "db-data:/var/lib/postgresql/data"
       - "./healthchecks:/healthchecks"
     healthcheck:
       test: /healthchecks/postgres.sh
       interval: "5s"
+    ports:
+      - "5432:5432"
+    networks:
+      - back-tier
+
+  pgadmin:
+    profiles: ["main", "without-worker"]
+    container_name: pgadmin
+    image: dpage/pgadmin4:latest
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_MAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PW}
+    ports:
+      - "5050:80"
+    restart: always
     networks:
       - back-tier
 
   # this service runs once to seed the database with votes
   # it won't run unless you specify the "seed" profile
-  # docker compose --profile seed up -d
+  # docker compose --profile seed up
   seed:
     build: ./seed-data
     profiles: ["seed"]

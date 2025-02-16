@@ -1,3 +1,12 @@
+# Inbox
+
+```bash
+http://localhost:8080 # vote
+http://localhost:8081 # view results
+http://localhost:5540 # redisinsight (connection url: redis:6379)
+http://localhost:5050 # pgadmin (pgAdmin user: postgres@postgres.com pgAdmin password: postgres; postgres Host/address: db; postgres port: 5432; postgres password: postgres)
+```
+
 # Example Voting App
 
 A simple distributed application running across multiple Docker containers.
