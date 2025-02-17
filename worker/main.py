@@ -10,6 +10,7 @@ import psycopg2.extensions
 import redis
 from psycopg2 import errors
 from redis import RedisError
+from dotenv import load_dotenv
 
 #########################################################################################
 
@@ -45,22 +46,22 @@ def is_running_in_container() -> bool:
 
 if is_running_in_container():
     print("Running in container")
-    # EXECUTION_ENVIRONMENT = "container"
-    # APP_ENV_INFO = "Running in container"
+    EXECUTION_ENVIRONMENT = "container"
+    POSTGRES_HOST = os.environ.get("POSTGRES_CONTAINER_HOST")
+    REDIS_HOST = os.environ.get("REDIS_CONTAINER_HOST")
 else:
     print("Running locally")
-    # EXECUTION_ENVIRONMENT = "local"
-    from dotenv import load_dotenv
+    EXECUTION_ENVIRONMENT = "local"
 
     load_dotenv(dotenv_path=".env", verbose=True, override=True)
-    # APP_ENV_INFO = "Running locally"
+    POSTGRES_HOST = os.environ.get("POSTGRES_HOST_HOST")
+    REDIS_HOST = os.environ.get("REDIS_HOST_HOST")
 
-POSTGRES_HOST = os.environ.get("POSTGRES_HOST")
 POSTGRES_USER = os.environ.get("POSTGRES_USER")
 POSTGRES_PASS = os.environ.get("POSTGRES_PASS")
 POSTGRES_NAME = os.environ.get("POSTGRES_NAME")
 
-REDIS_HOST = os.environ.get("REDIS_HOST")
+REDIS_PORT = os.environ.get("REDIS_PORT")
 
 #########################################################################################
 
@@ -116,7 +117,7 @@ def open_redis_connection(hostname: str) -> redis.Redis:
     ip = get_redis_ip(hostname)
     while True:
         try:
-            client = redis.Redis(host=ip, port=6379)
+            client = redis.Redis(host=ip, port=REDIS_PORT)
             if client.ping():
                 print("Connected to Redis", file=sys.stderr)
                 return client
@@ -148,7 +149,7 @@ def main_loop():
     """Main processing loop handling votes and connections"""
     try:
         pg_conn = open_db_connection()
-        redis_client = open_redis_connection("redis")
+        redis_client = open_redis_connection(REDIS_HOST)
         keep_alive = "SELECT 1"
 
         while True:
@@ -159,7 +160,7 @@ def main_loop():
                 redis_client.ping()
             except RedisError:
                 print("Reconnecting Redis...", file=sys.stderr)
-                redis_client = open_redis_connection("redis")
+                redis_client = open_redis_connection(REDIS_HOST)
 
             # Process votes
             if json_vote := redis_client.lpop("votes"):
@@ -192,8 +193,4 @@ def main_loop():
 
 
 if __name__ == "__main__":
-    # main_loop()
-
-    open_db_connection()
-    ip = get_redis_ip("localhost")
-    print(ip)
+    main_loop()

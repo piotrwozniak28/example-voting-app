@@ -20,7 +20,7 @@ services:
     volumes:
      - ./vote:/usr/local/app
     ports:
-      - "8080:80"
+      - "${VOTE_HOST_PORT}:80"
     networks:
       - front-tier
       - back-tier
@@ -57,14 +57,14 @@ services:
   redis:
     profiles: ["main", "without-worker"]
     image: redis:alpine
-    command: ["redis-server", "--bind", "0.0.0.0", "--port", "6379"]
+    command: ["redis-server", "--bind", "0.0.0.0", "--port", "${REDIS_PORT}"]
     volumes:
       - "./healthchecks:/healthchecks"
     healthcheck:
       test: /healthchecks/redis.sh
       interval: "5s"
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT}:${REDIS_PORT}"
     networks:
       - back-tier
 
@@ -72,7 +72,7 @@ services:
     profiles: ["main", "without-worker"]
     image: redis/redisinsight:latest
     ports:
-      - "5540:5540"
+      - "${REDIS_INSIGHT_PORT}:${REDIS_INSIGHT_PORT}"
     networks:
       - back-tier
 
@@ -82,7 +82,7 @@ services:
     environment:
     - POSTGRES_DB=${POSTGRES_DB}
     - POSTGRES_USER=${POSTGRES_USER}
-    - POSTGRES_PASSWORD=${POSTGRES_PW}
+    - POSTGRES_PASSWORD=${POSTGRES_PASS}
     volumes:
       - "db-data:/var/lib/postgresql/data"
       - "./healthchecks:/healthchecks"
@@ -90,7 +90,7 @@ services:
       test: /healthchecks/postgres.sh
       interval: "5s"
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
       - back-tier
 
@@ -99,8 +99,8 @@ services:
     container_name: pgadmin
     image: dpage/pgadmin4:latest
     environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_MAIL}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PW}
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASS}
     ports:
       - "5050:80"
     restart: always
