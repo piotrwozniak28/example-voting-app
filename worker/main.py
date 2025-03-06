@@ -10,7 +10,9 @@ import psycopg2.extensions
 import redis
 from psycopg2 import errors
 from redis import RedisError
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
+
+load_dotenv(dotenv_path=find_dotenv(), verbose=True, override=True)
 
 #########################################################################################
 
@@ -53,7 +55,6 @@ else:
     print("Running locally")
     EXECUTION_ENVIRONMENT = "local"
 
-    load_dotenv(dotenv_path=".env", verbose=True, override=True)
     POSTGRES_HOST = os.environ.get("POSTGRES_HOST_HOST")
     REDIS_HOST = os.environ.get("REDIS_HOST_HOST")
 
@@ -86,7 +87,7 @@ def open_db_connection() -> psycopg2.extensions.connection:
         cur.execute(
             """
             CREATE TABLE IF NOT EXISTS votes (
-                id VARCHAR(255) NOT NULL UNIQUE,
+                id VARCHAR(255) NOT NULL,
                 vote VARCHAR(255) NOT NULL
             )
         """
@@ -145,7 +146,7 @@ def update_vote(conn: psycopg2.extensions.connection, voter_id: str, vote: str) 
         raise
 
 
-def main_loop():
+def main():
     """Main processing loop handling votes and connections"""
     try:
         pg_conn = open_db_connection()
@@ -193,4 +194,4 @@ def main_loop():
 
 
 if __name__ == "__main__":
-    main_loop()
+    main()

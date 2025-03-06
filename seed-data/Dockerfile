@@ -6,11 +6,10 @@ RUN apt-get update \
     apache2-utils \
     && rm -rf /var/lib/apt/lists/*
 
+RUN pip install --no-cache-dir -r requirements.txt
+
 WORKDIR /seed
 
 COPY . .
 
-# create POST data files with ab friendly formats
-RUN python make-data.py
-
-CMD ["/seed/generate-votes.sh"]
+CMD ["python", "main.py"]
